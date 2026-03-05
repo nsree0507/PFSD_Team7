@@ -38,6 +38,58 @@
     --shadow-glow: 0 0 30px rgba(79,142,247,0.12);
   }
 
+  [data-theme="light"] {
+    --bg-primary: #f0f4f8;
+    --bg-secondary: #e8edf4;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f7f9fc;
+    --surface: #edf1f7;
+    --surface-light: #e2e8f0;
+    --border: rgba(99,130,191,0.18);
+    --border-bright: rgba(79,142,247,0.35);
+    --accent-blue: #2563eb;
+    --accent-cyan: #0891b2;
+    --accent-purple: #7c3aed;
+    --accent-green: #059669;
+    --accent-orange: #ea580c;
+    --accent-red: #dc2626;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --glow-blue: rgba(37,99,235,0.1);
+    --glow-cyan: rgba(8,145,178,0.08);
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    --shadow-glow: 0 0 30px rgba(37,99,235,0.08);
+  }
+
+
+  [data-theme="light"] {
+    --bg-primary: #f0f4f8;
+    --bg-secondary: #e8edf4;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f7f9fc;
+    --surface: #edf1f7;
+    --surface-light: #e2e8f0;
+    --border: rgba(99,130,191,0.18);
+    --border-bright: rgba(79,142,247,0.35);
+    --accent-blue: #2563eb;
+    --accent-cyan: #0891b2;
+    --accent-purple: #7c3aed;
+    --accent-green: #059669;
+    --accent-orange: #ea580c;
+    --accent-red: #dc2626;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --glow-blue: rgba(37,99,235,0.1);
+    --glow-cyan: rgba(8,145,178,0.08);
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    --shadow-glow: 0 0 30px rgba(37,99,235,0.08);
+  }
+
+  html { transition: background 0.3s, color 0.3s; }
+  html, body { transition: background 0.25s, color 0.25s; }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
@@ -69,7 +121,7 @@
   }
 
   .auth-card {
-    background: rgba(22, 27, 34, 0.85);
+    background: var(--bg-card);
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-bright);
     border-radius: 20px;
@@ -358,7 +410,7 @@
   /* ── SIDEBAR ── */
   .sidebar {
     width: var(--sidebar-w);
-    background: rgba(16,21,30,0.95);
+    background: var(--bg-secondary);
     backdrop-filter: blur(20px);
     border-right: 1px solid var(--border);
     display: flex;
@@ -486,7 +538,7 @@
   /* ── HEADER ── */
   .top-header {
     height: var(--header-h);
-    background: rgba(16,21,30,0.9);
+    background: var(--bg-secondary);
     backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
     display: flex;
@@ -555,6 +607,54 @@
   .btn-logout:hover {
     background: rgba(248,113,113,0.18);
   }
+
+
+  /* ── THEME TOGGLE ── */
+  .theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 100px;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .theme-toggle-btn:hover {
+    background: var(--surface-light);
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+  }
+  .theme-track {
+    width: 32px; height: 17px;
+    background: var(--surface-light);
+    border-radius: 100px;
+    position: relative;
+    border: 1px solid var(--border-bright);
+    transition: all 0.25s;
+    flex-shrink: 0;
+  }
+  .theme-track.on {
+    background: linear-gradient(135deg, #4f8ef7, #38bdf8);
+    border-color: transparent;
+  }
+  .theme-track::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 11px; height: 11px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.25s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .theme-track.on::after { left: 17px; }
 
   /* ── PAGE CONTENT ── */
   .page-content {
@@ -1457,10 +1557,9 @@ function HistoryPage() {
   );
 }
 
-function SettingsPage({ onLogout }) {
+function SettingsPage({ onLogout, darkMode, toggleTheme }) {
   const [notifs, setNotifs] = useState(true);
   const [autoRoute, setAutoRoute] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
   const [name, setName] = useState('Alex Johnson');
   const [email, setEmail] = useState('alex.johnson@company.com');
 
@@ -1486,7 +1585,7 @@ function SettingsPage({ onLogout }) {
         {[
           { lbl:'Email Notifications', sub:'Receive alerts for new ticket assignments', val:notifs, set:setNotifs },
           { lbl:'Auto-Routing', sub:'Allow AI to automatically route tickets', val:autoRoute, set:setAutoRoute },
-          { lbl:'Dark Mode', sub:'Use the dark interface theme', val:darkMode, set:setDarkMode },
+          { lbl:'Dark Mode', sub:'Switch between dark and light interface themes', val:darkMode, set:toggleTheme },
         ].map((s,i)=>(
           <div key={i} className="settings-row">
             <div>
@@ -1535,7 +1634,7 @@ const PAGE_TITLES = {
   history:'Ticket History', settings:'Settings'
 };
 
-function Dashboard({ onLogout }) {
+function Dashboard({ onLogout, darkMode, toggleTheme }) {
   const [activePage, setActivePage] = useState('dashboard');
 
   const renderPage = () => {
@@ -1545,7 +1644,7 @@ function Dashboard({ onLogout }) {
       case 'departments': return <DepartmentsPage />;
       case 'analytics': return <AnalyticsCharts />;
       case 'history': return <HistoryPage />;
-      case 'settings': return <SettingsPage onLogout={onLogout} />;
+      case 'settings': return <SettingsPage onLogout={onLogout} darkMode={darkMode} toggleTheme={toggleTheme} />;
       default: return <DashboardPage />;
     }
   };
@@ -1583,6 +1682,11 @@ function Dashboard({ onLogout }) {
         <header className="top-header">
           <div className="header-title">{PAGE_TITLES[activePage]}</div>
           <div className="header-right">
+            <button className="theme-toggle-btn" onClick={toggleTheme} title="Toggle theme">
+              <span>{darkMode ? '☀️' : '🌙'}</span>
+              <div className={`theme-track ${darkMode ? 'on' : ''}`}></div>
+              <span style={{fontSize:'11px',fontWeight:'600'}}>{darkMode ? 'Light' : 'Dark'}</span>
+            </button>
             <div className="icon-btn" title="Notifications">
               🔔
               <div className="notif-dot"></div>
@@ -1600,11 +1704,18 @@ function Dashboard({ onLogout }) {
 }
 
 // ─── AUTH PAGES ───────────────────────────────────
-function LoginPage({ onLogin, onSignup, onBack }) {
+function LoginPage({ onLogin, onSignup, onBack, darkMode, toggleTheme }) {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   return (
     <div className="auth-root">
+      <div style={{position:'fixed',top:'18px',right:'22px',zIndex:10}}>
+        <button className="theme-toggle-btn" onClick={toggleTheme}>
+          <span>{darkMode ? '☀️' : '🌙'}</span>
+          <div className={`theme-track ${darkMode ? 'on' : ''}`}></div>
+          <span style={{fontSize:'11px',fontWeight:'600'}}>{darkMode ? 'Light' : 'Dark'}</span>
+        </button>
+      </div>
       <div className="auth-card">
         <div className="auth-logo">
           <div className="logo-icon">🤖</div>
@@ -1628,9 +1739,16 @@ function LoginPage({ onLogin, onSignup, onBack }) {
   );
 }
 
-function SignupPage({ onLogin, onBack }) {
+function SignupPage({ onLogin, onBack, darkMode, toggleTheme }) {
   return (
     <div className="auth-root">
+      <div style={{position:'fixed',top:'18px',right:'22px',zIndex:10}}>
+        <button className="theme-toggle-btn" onClick={toggleTheme}>
+          <span>{darkMode ? '☀️' : '🌙'}</span>
+          <div className={`theme-track ${darkMode ? 'on' : ''}`}></div>
+          <span style={{fontSize:'11px',fontWeight:'600'}}>{darkMode ? 'Light' : 'Dark'}</span>
+        </button>
+      </div>
       <div className="auth-card">
         <div className="auth-logo">
           <div className="logo-icon">🤖</div>
@@ -1652,9 +1770,16 @@ function SignupPage({ onLogin, onBack }) {
 }
 
 // ─── LANDING ──────────────────────────────────────
-function LandingPage({ onSignIn, onSignUp, onDashboard }) {
+function LandingPage({ onSignIn, onSignUp, onDashboard, darkMode, toggleTheme }) {
   return (
     <div className="landing-root">
+      <div style={{position:'fixed',top:'18px',right:'22px',zIndex:10}}>
+        <button className="theme-toggle-btn" onClick={toggleTheme}>
+          <span>{darkMode ? '☀️' : '🌙'}</span>
+          <div className={`theme-track ${darkMode ? 'on' : ''}`}></div>
+          <span style={{fontSize:'11px',fontWeight:'600'}}>{darkMode ? 'Light' : 'Dark'}</span>
+        </button>
+      </div>
       <div className="landing-badge">✦ Powered by Artificial Intelligence</div>
       <h1 className="landing-title">
         <span className="grad">Smart Helpdesk</span><br/>Routing System
@@ -1686,7 +1811,18 @@ function LandingPage({ onSignIn, onSignUp, onDashboard }) {
 
 // ─── ROOT APP ─────────────────────────────────────
 function App() {
-  const [page, setPage] = useState('landing'); // landing | login | signup | dashboard
+  const [page, setPage] = useState('landing');
+  const [darkMode, setDarkMode] = useState(true);
+
+  const toggleTheme = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light');
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+  }, []);
 
   return (
     <>
@@ -1695,6 +1831,8 @@ function App() {
           onSignIn={() => setPage('login')}
           onSignUp={() => setPage('signup')}
           onDashboard={() => setPage('dashboard')}
+          darkMode={darkMode}
+          toggleTheme={toggleTheme}
         />
       )}
       {page === 'login' && (
@@ -1702,16 +1840,20 @@ function App() {
           onLogin={() => setPage('dashboard')}
           onSignup={() => setPage('signup')}
           onBack={() => setPage('landing')}
+          darkMode={darkMode}
+          toggleTheme={toggleTheme}
         />
       )}
       {page === 'signup' && (
         <SignupPage
           onLogin={() => setPage('dashboard')}
           onBack={() => setPage('login')}
+          darkMode={darkMode}
+          toggleTheme={toggleTheme}
         />
       )}
       {page === 'dashboard' && (
-        <Dashboard onLogout={() => setPage('landing')} />
+        <Dashboard onLogout={() => setPage('landing')} darkMode={darkMode} toggleTheme={toggleTheme} />
       )}
     </>
   );

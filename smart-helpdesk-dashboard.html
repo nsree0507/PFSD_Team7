@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
     --bg-primary: #0d1117;
@@ -1179,6 +1180,7 @@
 </style>
 </head>
 <body>
+<canvas id="departmentChart"></canvas>
 <canvas id="particle-canvas"></canvas>
 <div id="root"></div>
 
@@ -1233,7 +1235,73 @@
   window.addEventListener('resize', init);
 })();
 </script>
+<script>
 
+async function loadTickets() {
+
+    const response = await fetch("http://127.0.0.1:8000/tickets");
+    const result = await response.json();
+
+    const table = document.getElementById("ticketTable");
+    table.innerHTML = "";
+
+    result.data.forEach(ticket => {
+
+        const row = `
+        <tr>
+            <td>${ticket.ticket_id}</td>
+            <td>${ticket.query}</td>
+            <td>${ticket.department}</td>
+            <td>${ticket.status}</td>
+            <td>${ticket.time}</td>
+        </tr>
+        `;
+
+        table.innerHTML += row;
+    });
+
+    // CALL CHART FUNCTION
+    createDepartmentChart(result.data);
+}
+
+function createDepartmentChart(data){
+
+    const deptCount = {};
+
+    data.forEach(ticket => {
+
+        if(deptCount[ticket.department]){
+            deptCount[ticket.department]++;
+        } else {
+            deptCount[ticket.department] = 1;
+        }
+
+    });
+
+    const labels = Object.keys(deptCount);
+    const values = Object.values(deptCount);
+
+    const ctx = document.getElementById("departmentChart");
+
+    new Chart(ctx, {
+
+        type: "bar",
+
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Tickets by Department",
+                data: values
+            }]
+        }
+
+    });
+
+}
+
+loadTickets();
+
+</script>
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 

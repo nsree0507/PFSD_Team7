@@ -1183,20 +1183,7 @@
 <canvas id="departmentChart"></canvas>
 <canvas id="particle-canvas"></canvas>
 <div id="root"></div>
-<table>
-<thead>
-<tr>
-<th>ID</th>
-<th>Query</th>
-<th>Department</th>
-<th>Status</th>
-<th>Time</th>
-</tr>
-</thead>
 
-<tbody id="ticketTable"></tbody>
-
-</table>
 <script>
 // Particle animation
 (function() {
@@ -1356,94 +1343,85 @@ function statusBadge(s) {
 
 // ─── CHARTS ─────────────────────────────────────────
 function AnalyticsCharts() {
-  const pieRef = useRef(), barRef = useRef(), lineRef = useRef();
-  const charts = useRef({});
+
+  const barRef = useRef(null);
+  const chartRef = useRef(null);
 
   useEffect(() => {
-    const destroy = (k) => { if (charts.current[k]) { charts.current[k].destroy(); } };
 
-    destroy('pie');
-    charts.current.pie = new Chart(pieRef.current, {
-      type: 'doughnut',
-      data: {
-        labels: ['IT Support','Finance','Admissions','General','HR','Legal'],
-        datasets: [{ data:[38,22,15,12,8,5],
-          backgroundColor:['#4f8ef7','#34d399','#a78bfa','#fb923c','#38bdf8','#f87171'],
-          borderWidth:0, hoverOffset:6 }]
-      },
-      options: { plugins:{ legend:{ position:'right', labels:{ color:'#8b9ab5', font:{family:'DM Sans',size:12}, padding:12 } } }, cutout:'65%', animation:{duration:800} }
-    });
+    fetch("http://127.0.0.1:8000/tickets")
+      .then(res => res.json())
+      .then(result => {
 
-    destroy('bar');
-    charts.current.bar = new Chart(barRef.current, {
-      type: 'bar',
-      data: {
-        labels:['IT','Finance','Admissions','General','HR','Legal'],
-        datasets:[{
-          label:'Tickets handled',
-          data:[145,87,62,54,31,21],
-          backgroundColor:'rgba(79,142,247,0.7)',
-          borderRadius:6, borderSkipped:false,
-          hoverBackgroundColor:'rgba(56,189,248,0.85)'
-        }]
-      },
-      options: {
-        plugins:{ legend:{ display:false } },
-        scales:{
-          y:{ grid:{ color:'rgba(99,130,191,0.08)' }, ticks:{ color:'#8b9ab5', font:{family:'DM Sans'} } },
-          x:{ grid:{ display:false }, ticks:{ color:'#8b9ab5', font:{family:'DM Sans'} } }
-        },
-        animation:{duration:800}
+        const tickets = result.data;
+
+        const deptCount = {};
+
+        tickets.forEach(ticket => {
+
+          const dept = ticket.department;
+
+          if(deptCount[dept]){
+            deptCount[dept]++;
+          }else{
+            deptCount[dept] = 1;
+          }
+
+        });
+
+        const labels = Object.keys(deptCount);
+        const values = Object.values(deptCount);
+
+        if(chartRef.current){
+          chartRef.current.destroy();
+        }
+
+        chartRef.current = new Chart(barRef.current,{
+          type:"bar",
+          data:{
+            labels:labels,
+            datasets:[{
+            label:"Tickets by Department",
+            data:values,
+            backgroundColor:"#4f8ef7"
+    }]
+  },
+
+        options:{
+         responsive:true,
+         scales:{
+          y:{
+          beginAtZero:true,
+          ticks:{
+          stepSize:1
+        }
       }
-    });
+    }
+  }
+});
 
-    destroy('line');
-    charts.current.line = new Chart(lineRef.current, {
-      type: 'line',
-      data: {
-        labels:['8am','10am','12pm','2pm','4pm','6pm','8pm'],
-        datasets:[{
-          label:'Avg Response (min)',
-          data:[8,6,9,5,4,7,3],
-          borderColor:'#38bdf8',
-          backgroundColor:'rgba(56,189,248,0.08)',
-          pointBackgroundColor:'#38bdf8',
-          pointRadius:5,
-          tension:0.45, fill:true
-        }]
-      },
-      options: {
-        plugins:{ legend:{ display:false } },
-        scales:{
-          y:{ grid:{ color:'rgba(99,130,191,0.08)' }, ticks:{ color:'#8b9ab5', font:{family:'DM Sans'} } },
-          x:{ grid:{ display:false }, ticks:{ color:'#8b9ab5', font:{family:'DM Sans'} } }
-        },
-        animation:{duration:800}
-      }
-    });
+      });
 
-    return () => { destroy('pie'); destroy('bar'); destroy('line'); };
   }, []);
 
   return (
+
     <div>
-      <div className="page-header"><h2>Analytics</h2><p>AI routing performance and ticket distribution insights.</p></div>
-      <div className="charts-grid">
-        <div className="chart-wrap">
-          <div className="card-title">📊 Ticket Distribution</div>
-          <canvas ref={pieRef}></canvas>
-        </div>
-        <div className="chart-wrap">
-          <div className="card-title">🏢 Tickets by Department</div>
-          <canvas ref={barRef}></canvas>
-        </div>
+
+      <div className="page-header">
+        <h2>Analytics</h2>
+        <p>Ticket analytics from MongoDB</p>
       </div>
+
       <div className="chart-wrap">
-        <div className="card-title">⏱ Response Time Today</div>
-        <canvas ref={lineRef}></canvas>
+        <div className="card-title">Tickets by Department</div>
+        <canvas ref={barRef}></canvas>
       </div>
+
     </div>
+
   );
+
 }
 
 // ─── PAGES ──────────────────────────────────────────
@@ -1611,31 +1589,70 @@ function DepartmentsPage() {
 }
 
 function HistoryPage() {
+
+  const [tickets,setTickets] = useState([]);
+
+  useEffect(()=>{
+
+    fetch("http://127.0.0.1:8000/tickets")
+      .then(res=>res.json())
+      .then(data=>{
+
+        setTickets(data.data);
+
+      });
+
+  },[]);
+
   return (
+
     <div>
-      <div className="page-header"><h2>Ticket History</h2><p>Complete log of all routed support queries.</p></div>
+
+      <div className="page-header">
+        <h2>Ticket History</h2>
+        <p>Live data from MongoDB Atlas</p>
+      </div>
+
       <div className="table-wrap">
+
         <table>
+
           <thead>
             <tr>
-              <th>Ticket ID</th><th>Query</th><th>Department</th><th>Status</th><th>Time</th>
+              <th>ID</th>
+              <th>Query</th>
+              <th>Department</th>
+              <th>Status</th>
+              <th>Time</th>
             </tr>
           </thead>
+
           <tbody>
-            {SAMPLE_QUERIES.map((q,i)=>(
+
+            {tickets.map((t,i)=>(
+
               <tr key={i}>
-                <td><span className="ticket-id">{q.id}</span></td>
-                <td>{q.query}</td>
-                <td>{q.dept}</td>
-                <td>{statusBadge(q.status)}</td>
-                <td style={{color:'var(--text-muted)'}}>{q.time}</td>
+
+                <td>{t.ticket_id}</td>
+                <td>{t.query}</td>
+                <td>{t.department}</td>
+                <td>{t.status}</td>
+                <td>{t.time}</td>
+
               </tr>
+
             ))}
+
           </tbody>
+
         </table>
+
       </div>
+
     </div>
+
   );
+
 }
 
 function SettingsPage({ onLogout, darkMode, toggleTheme }) {

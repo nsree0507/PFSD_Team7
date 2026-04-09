@@ -320,7 +320,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
     </div>
     <div class="sidebar-user" onclick="showPage('settings')">
       <div class="user-avatar" id="sidebar-avatar"><span id="sidebar-initials">AJ</span></div>
-      <div><div class="user-name">Alex Johnson</div><div class="user-role">Admin</div></div>
+      <div><div class="user-name" id="sidebar-name">Alex Johnson</div><div class="user-role">Admin</div></div>
     </div>
   </nav>
 
@@ -355,8 +355,8 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
                 <div class="pd-avatar" id="pd-avatar"><span id="pd-initials">AJ</span></div>
                 <div class="pd-camera">📷</div>
               </div>
-              <div class="pd-name">Alex Johnson</div>
-              <div class="pd-email">alex.johnson@company.com</div>
+              <div class="pd-name" id="top-profile-name">Alex Johnson</div>
+              <div class="pd-email" id="top-profile-email">alex.johnson@company.com</div>
             </div>
             <input type="file" id="photo-input" accept="image/*" onchange="handlePhotoUpload(event)">
             <div class="pd-item" onclick="showPage('settings');closeDropdowns()">⚙ Settings</div>
@@ -383,11 +383,8 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
         </div>
         <div class="panel">
           <div class="panel-title">⚡ RECENT ACTIVITY</div>
-          <div class="activity-item"><div class="activity-dot"></div><div><div>Ticket TK-009 routed to IT Support</div><div class="activity-time">just now</div></div></div>
-          <div class="activity-item"><div class="activity-dot"></div><div><div>Finance resolved 3 pending tickets</div><div class="activity-time">4m ago</div></div></div>
-          <div class="activity-item"><div class="activity-dot" style="background:#f59e0b"></div><div><div>New ticket from user@company.com</div><div class="activity-time">9m ago</div></div></div>
-          <div class="activity-item"><div class="activity-dot" style="background:var(--accent2)"></div><div><div>Admissions queue cleared</div><div class="activity-time">22m ago</div></div></div>
-          <div class="activity-item"><div class="activity-dot" style="background:#f87171"></div><div><div>Legal ticket escalated</div><div class="activity-time">1h ago</div></div></div>
+          <!-- 🔥 ADD THIS EMPTY CONTAINER -->
+          <div id="activity-list"></div>
         </div>
       </div>
     </div>
@@ -484,9 +481,9 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
       <div class="page-sub">Manage your profile, preferences, and system options.</div>
       <div class="settings-section">
         <div class="settings-section-title">👤 Profile Information</div>
-        <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" value="Alex Johnson" id="settings-name"></div>
-        <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" type="email" value="alex.johnson@company.com"></div>
-        <button class="save-btn" onclick="showToast('Profile saved successfully!')">Save Changes</button>
+        <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" id="profile-name"></div>
+        <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" type="email" id="profile-email"></div>
+        <button class="save-btn" onclick="saveProfile()">Save Changes</button>
       </div>
       <div class="settings-section">
         <div class="settings-section-title">⚙ Preferences</div>
@@ -509,9 +506,9 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
     <button class="modal-close" onclick="closeModal('signin-modal')">✕</button>
     <div class="modal-title">Welcome back</div>
     <div class="modal-sub">Sign in to your account to continue</div>
-    <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="Enter your email address"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="email" placeholder="Enter your email address"></div>
     <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" placeholder="Enter your password"></div>
-    <button class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="closeModal('signin-modal');enterApp()">Sign In</button>
+    <button class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="signinUser()">Sign In</button>
     <div class="modal-footer">Don't have an account? <a onclick="closeModal('signin-modal');openModal('signup-modal')">Create one</a></div>
   </div>
 </div>
@@ -525,7 +522,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
     <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" placeholder="Enter your full name"></div>
     <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="Enter your email address"></div>
     <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" placeholder="Enter your password"></div>
-    <button class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="closeModal('signup-modal');enterApp()">Create Account</button>
+    <button class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="signupUser()">Create Account</button>
     <div class="modal-footer">Already have an account? <a onclick="closeModal('signup-modal');openModal('signin-modal')">Sign in</a></div>
   </div>
 </div>
@@ -646,7 +643,9 @@ function enterApp() {
   document.getElementById('landing').style.display = 'none';
   document.getElementById('app').classList.add('active');
   document.querySelector('.theme-toggle').style.display = 'none';
+  loadUserProfile();
   drawCharts();
+  loadTickets();
 }
 function backToLanding() {
   document.getElementById('app').classList.remove('active');
@@ -721,9 +720,14 @@ const deptMap = [
   { keywords:['legal','contract','compliance','lawsuit','dispute','regulation','policy'], dept:'Legal', reason:'Detected legal/compliance keywords. Routing to Legal department.' },
 ];
 let ticketCounter = 9;
+
 function submitQuery() {
   const q = document.getElementById('query-input').value.trim().toLowerCase();
-  if (!q) { showToast('Please enter a query first.'); return; }
+  if (!q) {
+    showToast('Please enter a query first.');
+    return;
+  }
+  // 🔹 Existing AI logic (KEEP THIS)
   let matched = { dept:'General Support', reason:'No specific department detected. Routing to General Support.', conf:72 };
   for (const d of deptMap) {
     if (d.keywords.some(k => q.includes(k))) {
@@ -738,6 +742,30 @@ function submitQuery() {
   document.getElementById('routing-reason').textContent = matched.reason;
   document.getElementById('routing-result').classList.add('show');
   showToast(`Ticket ${tid} routed to ${matched.dept}`);
+  // 🔥 NEW PART → SAVE TO DATABASE
+  const user_id = localStorage.getItem("user_id");
+  fetch("http://127.0.0.1:8000/tickets", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      text: q,
+      user_id: user_id,
+      label: matched.dept
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("Saved:", data);
+    // 🔥 refresh dashboard
+    loadTickets();
+    // ✅ CLEAR INPUT
+    document.getElementById('query-input').value = "";
+  })
+  .catch(err => {
+    console.error("Error saving ticket:", err);
+  });
 }
 
 // TOAST
@@ -790,33 +818,133 @@ function drawLineChart() {
 
 window.addEventListener('resize', () => { if (document.getElementById('page-analytics').classList.contains('active')) drawCharts(); });
 
-fetch("http://127.0.0.1:8000/tickets")
+function loadTickets() {
+  const user_id = localStorage.getItem("user_id");
+  fetch(`http://127.0.0.1:8000/tickets/${user_id}`)
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("tickets");
+      container.innerHTML = "";
+      // 🔹 TICKETS
+      data.data.forEach(ticket => {
+        const div = document.createElement("div");
+        div.classList.add("query-item");
+        div.innerHTML = `
+          <div>
+            <div class="query-name">${ticket.text}</div>
+            <div>
+              <span class="query-dept dept-it">${ticket.label || "General"}</span>
+            </div>
+          </div>
+          <span class="status-badge status-open">Open</span>
+        `;
+        container.appendChild(div);
+      });
+      // 🔥 RECENT ACTIVITY
+      const activityContainer = document.getElementById("activity-list");
+      activityContainer.innerHTML = "";
+      data.data.slice(-5).reverse().forEach(ticket => {
+        const item = document.createElement("div");
+        item.classList.add("activity-item");
+        item.innerHTML = `
+          <div class="activity-dot"></div>
+          <div>
+            <div>Ticket routed to ${ticket.label || "General"}</div>
+            <div class="activity-time">just now</div>
+          </div>
+        `;
+        activityContainer.appendChild(item);
+      });
+    })
+    .catch(err => console.error(err));
+}
+function signupUser() {
+  const name = document.querySelector("#signup-modal input[type='text']").value;
+  const email = document.querySelector("#signup-modal input[type='email']").value;
+  const password = document.querySelector("#signup-modal input[type='password']").value;
+
+  fetch("http://127.0.0.1:8000/signup", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ name, email, password })
+  })
   .then(res => res.json())
   .then(data => {
-    const container = document.getElementById("tickets");
+    alert(data.message);
+  });
+}
 
-    container.innerHTML = "";
+function signinUser() {
+  const email = document.querySelector("#signin-modal input[type='email']").value;
+  const password = document.querySelector("#signin-modal input[type='password']").value;
+  fetch("http://127.0.0.1:8000/signin", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ email, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.message === "Login successful") {
+      localStorage.setItem("user_id", data.user_id);
+      localStorage.setItem("user_name", data.name);
+      localStorage.setItem("user_email", data.email);
+      closeModal('signin-modal');
+      enterApp();
+      loadUserProfile();
+      loadTickets();
+    } else {
+      alert("Invalid login");
+    }
+  });
+}
 
-    // ✅ CORRECT LINE
-    data.data.forEach(ticket => {
+function loadUserProfile() {
+  const name = localStorage.getItem("user_name");
+  const email = localStorage.getItem("user_email");
+  if (name && email) {
+    // ✅ Settings page fields
+    document.querySelector("#profile-name").value = name;
+    document.querySelector("#profile-email").value = email;
+    // ✅ Top-right profile dropdown
+    document.querySelector("#top-profile-name").innerText = name;
+    document.querySelector("#top-profile-email").innerText = email;
+    // ✅ Sidebar profile
+    document.querySelector("#sidebar-name").innerText = name;
+    // Optional: initials (AJ → dynamic)
+    const initials = name.split(" ").map(n => n[0]).join("");
+    document.querySelector("#profile-initials").innerText = initials;
+  }
+}
 
-      const div = document.createElement("div");
-      div.classList.add("query-item");
-
-      div.innerHTML = `
-        <div>
-          <div class="query-name">${ticket.text}</div>
-          <div>
-            <span class="query-dept dept-it">${ticket.label}</span>
-          </div>
-        </div>
-        <span class="status-badge status-open">Open</span>
-      `;
-
-      container.appendChild(div);
-    });
+function saveProfile() {
+  const name = document.querySelector("input[type='text']").value;
+  const email = document.querySelector("input[type='email']").value;
+  const user_id = localStorage.getItem("user_id");
+  fetch(`http://127.0.0.1:8000/update-profile/${user_id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name: name,
+      email: email,
+      password: ""
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    showToast("Profile updated successfully ✅");
+    // update UI instantly
+    document.querySelector(".pd-name").textContent = name;
+    document.querySelector(".pd-email").textContent = email;
+    document.querySelector(".user-name").textContent = name;
   })
   .catch(err => console.error(err));
+}
 </script>
 </body>
 </html>

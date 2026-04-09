@@ -3,35 +3,29 @@ import os
 from dotenv import load_dotenv
 import certifi
 
-# 🔹 Load environment variables
 load_dotenv(dotenv_path="backend/.env")
-
 MONGO_URI = os.getenv("MONGO_URI")
-
-# 🔹 Correct MongoDB Atlas connection
 client = MongoClient(
     MONGO_URI,
     tlsCAFile=certifi.where(),
+    tls=True,
+    tlsAllowInvalidCertificates=True,
     serverSelectionTimeoutMS=5000
 )
 
-# 🔹 Database
 db = client["nlp_dashboard"]
+queries_collection = db["queries"]
+predictions_collection = db["predictions"]
+labels_collection = db["labels"]
 
-# 🔹 Collections
-queries_collection = db["queries"]           # existing
-predictions_collection = db["predictions"]   # ⭐ REQUIRED
-labels_collection = db["labels"]             # ⭐ REQUIRED
-
-# 🔹 Optional: keep old variable for compatibility
 collection = queries_collection
 
-# 🔹 Test connection
 try:
     client.admin.command('ping')
     print("✅ Connected to MongoDB")
 except Exception as e:
     print("❌ MongoDB connection error:", e)
 
-# 🔹 Debug (optional)
-#print("MONGO URI:", MONGO_URI)
+print("Connected to MongoDB")
+#print("Documents:", list(collection.find()))
+print("MONGO URI:", MONGO_URI)

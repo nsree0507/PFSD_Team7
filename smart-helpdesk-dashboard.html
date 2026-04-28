@@ -955,7 +955,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
         <a href="#" class="auth-forgot" onclick="showPanel('forgotPanel');return false;">Forgot Password?</a>
       </div>
 
-      <button class="auth-btn" onclick="doLogin()">Login</button>
+      <button class="auth-btn" onclick="login()">Login</button>
 
       <div class="auth-links-row">
         <a href="#" class="auth-link-small" onclick="showPanel('signupPanel');return false;">Parent Registration?</a>
@@ -1033,7 +1033,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
         </label>
       </div>
 
-      <button class="auth-btn" onclick="doSignup()">Create Account</button>
+      <button class="auth-btn" onclick="signup()">Create Account</button>
 
       <div class="auth-switch">Already have an account? <a href="#" onclick="showPanel('loginPanel');return false;">Login</a></div>
     </div>
@@ -1785,44 +1785,74 @@ function toggleVoice() {
 
 /* ─── Main Analyze Function ────────────────────────────── */
 function analyzeQuery() {
-  const input = document.getElementById('queryInput');
-  const analyzeBtn = document.getElementById('analyzeBtn');
-  const analyzingBar = document.getElementById('analyzingBar');
-  const resultPanel = document.getElementById('resultPanel');
-  if (!input) return;
+    const input = document.getElementById('queryInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const analyzingBar = document.getElementById('analyzingBar');
+    const resultPanel = document.getElementById('resultPanel');
 
-  const text = input.value.trim();
-  if (!text) {
-    input.focus(); input.style.borderColor = '#dc2626';
-    setTimeout(() => { input.style.borderColor = ''; }, 1500);
-    return;
-  }
+    const text = input.value.trim();
 
-  addChatMessage('user', text);
-  input.value = '';
-
-  analyzeBtn.disabled = true;
-  analyzeBtn.querySelector('.btn-text').textContent = 'Analyzing...';
-  if (analyzingBar) analyzingBar.style.display = 'block';
-  if (resultPanel) resultPanel.style.display = 'none';
-
-  setTimeout(() => {
-    const detected = detectIntent(text);
-    const response = generateResponse(detected.intent);
-    const data = { ...detected, response };
-
-    if (analyzingBar) analyzingBar.style.display = 'none';
-    analyzeBtn.disabled = false;
-    analyzeBtn.querySelector('.btn-text').textContent = 'Ask';
-
-    displayResult(data);
-    addChatMessage('assistant', buildChatSummary(data), true);
-
-    // Auto-navigate on high confidence
-    if (detected.confidence >= 0.7 && detected.intent !== 'unknown') {
-      autoNavigate(detected.intent);
+    if (!text) {
+        input.focus();
+        return;
     }
-  }, 900);
+
+    // Show user message
+    addChatMessage('user', text);
+    input.value = '';
+
+    analyzeBtn.disabled = true;
+    analyzeBtn.querySelector('.btn-text').textContent = 'Analyzing...';
+    if (analyzingBar) analyzingBar.style.display = 'block';
+    if (resultPanel) resultPanel.style.display = 'none';
+
+    /* 🔥 CALL BACKEND AI */
+    fetch(`${BASE_URL}/predict`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ query: text })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        const categoryMap = {
+            "Attendance Issue": "attendance",
+            "Marks Issue": "marks",
+            "Fees Issue": "fees",
+            "Exam Query": "exam",
+            "Hostel Issue": "hostel",
+            "General Query": "unknown"
+        };
+        const detected = {
+            intent: categoryMap[data.category] || "unknown",
+            confidence: data.confidence || 0.9,
+            category: data.category || "AI Prediction",
+            icon: "🤖",
+            keywords: [],
+            ambiguous: false
+        };
+
+        const response = generateResponse(detected.intent || "unknown");
+
+        const finalData = { ...detected, response };
+
+        if (analyzingBar) analyzingBar.style.display = 'none';
+        analyzeBtn.disabled = false;
+        analyzeBtn.querySelector('.btn-text').textContent = 'Ask';
+
+        displayResult(finalData);
+        addChatMessage('assistant', buildChatSummary(finalData), true);
+
+        /* 🔥 STORE IN DATABASE */
+        createTicket(text);
+
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Error connecting to backend ❌");
+    });
 }
 
 /* ─── Auto-navigate highlight ──────────────────────────── */
@@ -2341,6 +2371,107 @@ function doLogout() {
   document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('captchaInput')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 })();
+
+const BASE_URL = "http://127.0.0.1:5000";
+/* ================================
+   SIGNUP (CONNECTED TO FLASK)
+================================ */
+function signup() {
+    const name = document.getElementById("suFirst").value + " " + document.getElementById("suLast").value;
+    const email = document.getElementById("suEmail").value;
+    const password = document.getElementById("suPass").value;
+
+    fetch(`${BASE_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        showPanel("loginPanel");
+    })
+    .catch(err => console.error(err));
+}
+
+
+/* ================================
+   LOGIN (CONNECTED TO FLASK)
+================================ */
+function login() {
+    const email = document.getElementById("loginUser").value;
+    const password = document.getElementById("loginPass").value;
+
+    fetch(`${BASE_URL}/signin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.user) {
+
+            // STORE FULL USER SESSION
+            localStorage.setItem("user", JSON.stringify(data.user));
+
+            alert("Login successful ✅");
+
+            // Enter dashboard with real user
+            enterPortal(data.user);
+
+        } else {
+            alert("Invalid credentials ❌");
+        }
+    })
+    .catch(err => console.error(err));
+}
+
+
+/* ================================
+   CREATE TICKET (AI CONNECTED)
+================================ */
+function createTicket(queryText) {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const user_id = user?.user_id;
+
+    fetch(`${BASE_URL}/tickets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            user_id: user_id,
+            query: queryText
+        })
+    })
+}
+
+
+/* ================================
+   GET USER TICKETS
+================================ */
+function getTickets() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const user_id = user?.user_id;
+
+    fetch(`${BASE_URL}/tickets/${user_id}`)
+    .then(res => res.json())
+    .then(data => {
+        console.log("User Tickets:", data);
+    })
+    .catch(err => console.error(err));
+}
+fetch("http://127.0.0.1:5000/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: userInput })
+})
+.then(res => res.json())
+.then(data => {
+    console.log(data);
+
+    document.getElementById("output").innerHTML =
+        "Category: " + data.category +
+        "<br>Confidence: " + data.confidence;
+});
 </script>
 </body>
 </html>

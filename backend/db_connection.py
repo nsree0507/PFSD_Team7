@@ -14,15 +14,14 @@ client = MongoClient(
     serverSelectionTimeoutMS=5000
 )
 
-db = client["nlp_dashboard"]
+# ✅ ERP database
+db = client["erp_db"]
 
-queries_collection = db["queries"]
-predictions_collection = db["predictions"]
-labels_collection = db["labels"]
-collection_users = db["users"]
+# ✅ Collections
+users_collection = db["users"]
+tickets_collection = db["tickets"]
 
-collection = queries_collection
-
+# ✅ Connection check
 try:
     client.admin.command('ping')
     print("✅ Connected to MongoDB")
@@ -30,4 +29,3 @@ except Exception as e:
     print("❌ MongoDB connection error:", e)
 
 print("Connected to MongoDB")
-print("MONGO URI:", MONGO_URI)
